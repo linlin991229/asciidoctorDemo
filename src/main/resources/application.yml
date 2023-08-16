@@ -1,0 +1,12 @@
+quarkus:
+  datasource:
+    db-kind: postgresql
+    reactive:
+      url: vertx-reactive:postgresql://localhost/postgres
+    username: postgres
+    password: 024680
+  hibernate-orm:
+    database:
+      generation: drop-and-create
+    log:
+      sql: true
