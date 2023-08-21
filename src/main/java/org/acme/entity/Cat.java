@@ -1,9 +1,12 @@
 package org.acme.entity;
 
 import io.quarkus.hibernate.reactive.panache.PanacheEntity;
+import io.quarkus.hibernate.reactive.panache.common.WithSession;
+import io.quarkus.hibernate.reactive.panache.common.WithTransaction;
 import io.quarkus.panache.common.Parameters;
 import io.smallrye.mutiny.Uni;
 import jakarta.persistence.*;
+import jakarta.transaction.Transactional;
 import org.acme.entity.dto.CatDTO;
 import org.acme.entity.dto.RecordCatDTO;
 
@@ -20,7 +23,7 @@ import java.util.List;
 public class Cat extends PanacheEntity {
     private String name;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private Person person;
 
 
@@ -55,9 +58,24 @@ public class Cat extends PanacheEntity {
         return find("person", person).firstResult();
     }
 
+    /**
+     * layz加载的一种实现
+     * @return Uni<Cat>
+     */
+    public static Uni<Cat> findCat() {
+        return Cat.<Cat>findAll().firstResult().flatMap(cat -> {
+            return Person.<Person>findById(cat.person.id).invoke(person1 -> {
+                        System.out.println("cat::: = " + cat.person.id);
+                        cat.person = person1;
+                    })
+                    .map(x -> cat);
+        });
+    }
+
     public static Uni<CatDTO> findByPersonResultDTO(Person person) {
         return find("person", person).project(CatDTO.class).firstResult();
     }
+
     public static Uni<List<RecordCatDTO>> findByPersonResultRecordDTO(Person person) {
         return find("person", person).project(RecordCatDTO.class).list();
     }

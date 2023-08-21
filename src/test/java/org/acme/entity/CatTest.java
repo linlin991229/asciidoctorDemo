@@ -45,9 +45,6 @@ class CatTest {
     void findById(UniAsserter asserter) {
         asserter.assertThat(() -> Panache.withSession(() -> Cat.findById(1L)),
                 System.out::println);
-
-//        asserter.assertThat(()->Panache.withSession(()->Cat.findWithPerson(1L)),
-//                System.out::println);
         asserter.assertThat(() -> Panache.withSession(() -> catRepository.findByName(1L)),
                 list -> System.out.println("list = " + list));
     }
@@ -66,8 +63,23 @@ class CatTest {
         Person person = new Person();
         person.id = 1L;
         person.setName("lin");
-        asserter.assertThat(() -> Panache.withTransaction(() -> Cat.findByPerson(person)),
-                entity-> System.out.println("findByPerson==>"+entity));
+        asserter.assertThat(() -> Panache.withSession(() -> Cat.findByPerson(person)),
+                entity -> System.out.println("findByPerson==>" + entity));
+    }
+
+    @Test
+    @RunOnVertxContext
+    void findCat(UniAsserter asserter) {
+        asserter = new UniAsserterInterceptor(asserter) {
+            @Override
+            protected <T> Supplier<Uni<T>> transformUni(Supplier<Uni<T>> uniSupplier) {
+                return () -> Panache.withTransaction(uniSupplier);
+            }
+        };
+
+        asserter.assertThat(Cat::findCat,
+                cat -> System.out.println("cat = " + cat));
+
     }
 
     @Test
@@ -77,7 +89,7 @@ class CatTest {
         person.id = 1L;
         person.setName("lin");
         asserter.assertThat(() -> Panache.withTransaction(() -> Cat.findByPersonResultDTO(person)),
-                entity-> System.out.println("findByPersonResultDTO==>"+entity));
+                entity -> System.out.println("findByPersonResultDTO==>" + entity));
     }
 
     @Test
@@ -87,6 +99,6 @@ class CatTest {
         person.id = 1L;
         person.setName("lin");
         asserter.assertThat(() -> Panache.withTransaction(() -> Cat.findByPersonResultRecordDTO(person)),
-                entity-> entity.forEach(item-> System.out.println("item = " + item)));
+                entity -> entity.forEach(item -> System.out.println("item = " + item)));
     }
 }
